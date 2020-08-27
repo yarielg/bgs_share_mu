@@ -1,0 +1,15 @@
+{
+    "name": "dev/bg_sharer_mu",
+    "description": "Create approval flow for content to a top level",
+    "authors": [
+        {
+            "name": "yarielg",
+            "email": "yariel.gordillo@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": { "Bgs\\Inc\\": "./inc"
+        }
+    }
+}
