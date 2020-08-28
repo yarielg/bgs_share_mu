@@ -9,7 +9,8 @@ final class Init{
         return [
             Base\Pages::class,
             Base\Enqueue::class,
-
+            Base\CPT::class,
+            Base\Users::class,
         ] ;
     }
 
