@@ -13,6 +13,8 @@ class CPT
         add_action( 'init', array($this, 'bgs_register_my_taxes_bgs_categories') );
         //Actions
         add_filter('post_row_actions',array($this,'bgs_cpt_actions'), 10, 2);
+        //CPT Template
+        add_filter( 'single_template', array($this, 'bgs_load_my_custom_template'), 50, 1 );
     }
 
     function bgs_register_my_cpts_bg_resources() {
@@ -60,6 +62,9 @@ class CPT
             "rewrite" => [ "slug" => "bgs_resources", "with_front" => true ],
             "query_var" => true,
             "supports" => [ "title", "editor", "thumbnail" ],
+            'capabilities' => array(
+                'publish_posts' => 'publish_resources',
+            ),
         ];
 
         register_post_type( "bgs_resources", $args );
@@ -106,48 +111,45 @@ class CPT
             "rest_controller_class" => "WP_REST_Terms_Controller",
             "show_in_quick_edit" => false,
         ];
-        register_taxonomy( "bgs_categories", [ "bg_resources" ], $args );
+        register_taxonomy( "bgs_categories", [ "bgs_resources" ], $args );
     }
 
     function bgs_cpt_actions($actions, $post){
-        //check for your post type
+
+        $user = wp_get_current_user();
+
+        if(isset($_GET['actiona']) && isset($_GET['post'])) {
+            if ($_GET['actiona'] == 'bgs_send_to_parent' && $_GET['post'] == $post->ID ) {
+                //Check privilege here
+                update_post_meta($post->ID, 'resource_sent', $user->ID);
+                $current_site = get_current_blog_id();
+                $flag = bgs_add_media($post->ID,$post->post_name, $post->guid,'requested', serialize(array()),$current_site);
+                echo $flag ? '<div class="updated notice"><p>Success! The request was sent to higher level</p></div>' :
+                             '<div class="updated error"><p>Error! A request was previously send for this resource</p></div>';;
+            }
+        }
+
         if ($post->post_type == "bgs_resources"){
-            // Build your links URL.
-            $url = admin_url( 'admin.php?page=mycpt_page&post=' . $post->ID );
-
-            // Maybe put in some extra arguments based on the post status.
-            //$edit_link = add_query_arg( array( 'action' => 'edit' ), $url );
-
-            // The default $actions passed has the Edit, Quick-edit and Trash links.
-           // $trash = $actions['trash'];
-
-            /*
-             * You can reset the default $actions with your own array, or simply merge them
-             * here I want to rewrite my Edit link, remove the Quick-link, and introduce a
-             * new link 'Copy'
-             */
-            $actions['send_rejection'] = "<a class='wr_send_rejection' href='" . admin_url( "users.php?action=wr_send_rejection&amp;post=" . $post->ID ) . "'>" . __( 'Send Rejection' ) . "</a>";
-            $actions['send_approval'] = "<a class='send_approval' href='" . admin_url( "users.php?action=send_approval&amp;post=" . $post->ID ) . "'>" . __( 'Send Approval' ) . "</a>";
-
-            // You can check if the current user has some custom rights.
-            /*if ( current_user_can( 'edit_my_cpt', $post->ID ) ) {
-
-                // Include a nonce in this link
-                $copy_link = wp_nonce_url( add_query_arg( array( 'action' => 'copy' ), $url ), 'edit_my_cpt_nonce' );
-
-                // Add the new Copy quick link.
-                $actions = array_merge( $actions, array(
-                    'copy' => sprintf( '<a href="%1$s">%2$s</a>',
-                        esc_url( $copy_link ),
-                        'Duplicate'
-                    )
-                ) );
-
-                // Re-insert thrash link preserved from the default $actions.
-                $actions['trash']=$trash;
-            }*/
+            //If the user is an admin from a child website, he can send the approval or the rejection
+            if(in_array( 'contributor', $user->roles) && get_current_blog_id() !=-1){
+             //   $actions['send_rejection'] = "<a class='wr_send_rejection' href='" . admin_url( "edit.php?post_type=bgs_resources&amp;action=bgs_send_rejection&amp;post=" . $post->ID ) . "'>" . __( 'Send Rejection' ) . "</a>";
+             //   $actions['send_approval'] = "<a class='bgs_send_approval' href='" . admin_url( "edit.php?post_type=bgs_resources&amp;action=bgs_send_approval&amp;post=" . $post->ID ) . "'>" . __( 'Send Approval' ) . "</a>";
+                $actions['bgs_send_to_parent'] = sprintf('<a href="'.admin_url( "edit.php?post_type=bgs_resources&amp;actiona=%s&amp;post=%s").'">Send to Parent</a>','bgs_send_to_parent',$post->ID);
+            }
         }
         return $actions;
+    }
+
+    /**
+     * Load the cpt template
+     */
+
+    function bgs_load_my_custom_template( $template ) {
+
+        if ( is_singular( 'bgs_resources' ) ) {
+            $template = BGS_PLUGIN_PATH . 'templates/single-bgs_resources.php';
+        }
+        return $template;
     }
 
 }

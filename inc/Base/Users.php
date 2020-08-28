@@ -8,9 +8,19 @@ class Users
 {
     public function register(){
         add_filter('user_row_actions', array($this,'bgs_send_rejection_link'), 10, 2);
+
+        //Add the page template for use registration
+        add_filter('theme_page_templates', array($this,'bgs_catch_plugin_template'));
+
+        add_filter ('page_template', array($this,'bgs_redirect_page_template'));
     }
 
-    // Rejecting and Approving contributors / Sending emails
+    /**
+     * @param $actions
+     * @param $user
+     * @return mixed
+     * @description Rejecting and Approving contributors / Sending emails
+     */
     function bgs_send_rejection_link($actions, $user) {
 
         if( isset($_GET['action']) && ($_GET['user'] == $user->user_email) ) {
@@ -42,6 +52,28 @@ class Users
             $actions['send_rejection'] = "<a class='wr_send_rejection' href='" . admin_url( "users.php?action=bgs_send_rejection&amp;user=" . $user->user_email ) . "'>" . __( 'Send Rejection' ) . "</a>";
         }
         return $actions;
+    }
+
+    /**
+     * @param $templates
+     * @return Includes the template to the template array
+     */
+    function bgs_catch_plugin_template($templates) {
+        $templates['template-custom-registration.php'] = 'Custom Register Page';
+        return $templates;
+    }
+
+    /**
+     * @param $template
+     * @return Register the template to be used
+
+     */
+    function bgs_redirect_page_template ($template) {
+        $post = get_post();
+        $page_template = get_post_meta( $post->ID, '_wp_page_template', true );
+        if ('template-custom-registration.php' == basename ($page_template))
+            $template = BGS_PLUGIN_PATH . 'templates/template-custom-registration.php';
+        return $template;
     }
 
 }

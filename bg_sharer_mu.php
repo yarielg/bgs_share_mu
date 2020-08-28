@@ -22,6 +22,11 @@ define ( 'BGS_PLUGIN_VERSION', '1.0.0');
 if( file_exists( dirname( __FILE__ ) . '/vendor/autoload.php') ){
     require_once  dirname( __FILE__ ) . '/vendor/autoload.php';
 }
+
+if( ! class_exists( 'WP_List_Table' ) ) {
+    require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+}
+
 //Change WRPL for plugin's initials
 define('BGS_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define('BGS_PLUGIN_URL' , plugin_dir_url(  __FILE__  ) );
@@ -30,16 +35,10 @@ define('BGS_PLUGIN_DIR_BASENAME' , dirname(plugin_basename(__FILE__)) );
 
 //include the helpers
 include 'inc/util/helpers.php';
+include 'inc/util/Request_Resource_Table.php';
 
 if( class_exists( 'Bgs\\Inc\\Init' ) ){
     register_activation_hook( __FILE__ , array('Bgs\\Inc\\Base\\Activate','activate') );
-    //Set a new role for user that are expecting approval
-    //Ask for the existence of pending role
-    add_role(
-        'pending_contributor',
-        __( 'Pending Contributor'),
-        array()
-    );
     Bgs\Inc\Init::register_services();
 }
 
