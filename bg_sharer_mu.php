@@ -33,6 +33,13 @@ include 'inc/util/helpers.php';
 
 if( class_exists( 'Bgs\\Inc\\Init' ) ){
     register_activation_hook( __FILE__ , array('Bgs\\Inc\\Base\\Activate','activate') );
+    //Set a new role for user that are expecting approval
+    //Ask for the existence of pending role
+    add_role(
+        'pending_contributor',
+        __( 'Pending Contributor'),
+        array()
+    );
     Bgs\Inc\Init::register_services();
 }
 
